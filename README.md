@@ -1,0 +1,1 @@
+TypeGraphQl, hasura, express boilerplate

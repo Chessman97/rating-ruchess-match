@@ -1,0 +1,4205 @@
+openapi: 3.0.0
+servers:
+  - description: SwaggerHub API Auto Mocking
+    url: http://localhost:3000/api
+info:
+  description: This is a simple API
+  version: "1.0.0"
+  title: Simple Inventory API
+  contact:
+    email: you@your-company.com
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+tags:
+  - name: user
+    description: "Controller for some users methods"
+  - name: content
+    description: "Controller for some content methods"
+  - name: comment
+    description: "Controller for some comment methods"
+  - name: admin
+    description: "Controller for some admin methods"
+  - name: chat
+    description: "Controller for chat methods"
+  - name: system
+    description: "System controller"
+  - name: campaign
+    description: "Controller controller"
+  - name: product
+    description: "Controller for some product methods"
+  - name: package
+    description: "Controller for some content package methods"
+
+paths:
+  /campaign:
+    post:
+      tags:
+        - campaign
+      summary: Add new campaign
+      description: |
+        Add new campaign
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignRequest'
+        description: ""
+      security:
+        - BearerAuthAccess: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+          description: 'New campaign entity with some empty field.'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: ''
+    get:
+      tags:
+        - campaign
+      summary: get user's unviewed campaigns
+      operationId: getUnviewedCampaigns
+      description: |
+        Get campaigns which user hasn't seen yet
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: query
+          name: point
+          schema:
+            type: string
+            example: "53.35516211475919,83.769850730896"
+            description: Correct latlon string ("lattitude.coord,longitute.coord")
+        - in: query
+          name: radius
+          schema:
+            type: integer
+            example: 100
+            description: Querying radius in meters
+        - in: query
+          name: skip
+          schema:
+            type: integer
+          description: Amount of new content queue to skip
+        - in: query
+          name: take
+          schema:
+            type: integer
+          description: Amount of new content queue to take
+      responses:
+        '200':
+          content:
+            application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CampaignResponse'
+          description: OK. Returns arrays with recommended content (viewed and new)
+  /campaign/{campaignId}/reward:
+    get:
+      tags:
+        - campaign
+      summary: Get rewarded for viewing ads
+      description: |
+        Get rewarded for viewing ads
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: campaignId
+          schema:
+            type: integer
+          required: true
+          description: ID of campaign
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: number
+                example: 5
+          description: 'Received per view'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: ''
+  /campaign/{campaignId}/view:
+    put:
+      tags:
+        - campaign
+      summary: view action from user for campaign
+      operationId: viewCampaign
+      description: |
+        Creating a campaign view entity for campaign with given id from user (detected by auth)
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: campaignId
+          schema:
+            type: integer
+          required: true
+          description: ID of campaign
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/CampaignView'
+            description: Object of created CampaignView (or exists view entity, cuz view entity is unique)
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Campaign not found
+  /user/anonym:
+    post:
+      tags:
+        - user
+      summary: get access token for anonym users
+      description: |
+        Returns header with access token for anonym user.
+      responses:
+        '200':
+          headers:
+            Access-Token:
+              schema:
+                type: string
+              description: "New access token for anonym"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: 'OK'
+          description: "OK"
+  /user/signup/phone/code:
+    post:
+      tags:
+        - user
+      summary: sends verification code
+      operationId: sendRegistrationSmsCode
+      description: |
+        Sends registration code via sms to given phone number.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneBody'
+        description: "Only one parameter with phone number"
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+          description: "Code was sended. Now it answer with sms code (in field 'code'), that will be sended. WILL NOT response that way in future."
+  /user/signup/phone/code/verification:
+    post:
+      tags:
+        - user
+      summary: verify given sms code
+      operationId: verifyRegistrationSmsCode
+      description: |
+        Verify given sms code by matching it with sended.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeVerificationBody'
+        description: "SMS code, entered by user and user's phone number"
+      responses:
+        '200':
+          headers:
+            Access-Token:
+              schema:
+                type: string
+              description: "New access token for user"
+            Refresh-Token:
+              schema:
+                type: string
+              description: "New refresh token for user"
+            X-New-User:
+              schema:
+                type: string
+              description: "Flag for detect is that user is new"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: "New user entity with some empty field."
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: "Given code does not match with sended"
+  /user/signup/wechat/code/verification:
+    post:
+      tags:
+        - user
+      summary: verify user via wechat
+      operationId: verifyWechatCode
+      description: |
+        Verify user by given wechat code
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WechatCodeVerificationBody'
+        description: "Sended wechat code"
+      responses:
+        '200':
+          headers:
+            Access-Token:
+              schema:
+                type: string
+              description: "New access token for user"
+            Refresh-Token:
+              schema:
+                type: string
+              description: "New refresh token for user"
+            Wechat-Access-Token:
+              schema:
+                type: string
+              description: "Sended wechat access token for user"
+            Wechat-Refresh-Token:
+              schema:
+                type: string
+              description: "Sended wechat refresh token for user"
+            X-New-User:
+              schema:
+                type: string
+              description: "Flag for detect is that user is new"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: "New user entity with some empty field."
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: "Given code does not match with sended"
+  /user/phone/attach/code:
+    post:
+      tags:
+        - user
+      summary: sends verification code
+      operationId: sendSmsCodeForPhoneAttach
+      description: |
+        Sends code via sms to given phone number for attaching this phone number.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneBody'
+        description: "Only one parameter with phone number"
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkResponse'
+          description: "Code was sended. Now it answer with sms code (in field 'code'), that will be sended. WILL NOT response that way in future."
+  /user/phone/attach/code/verification:
+    post:
+      tags:
+        - user
+      summary: verify given sms code
+      operationId: verifySmsCodeForPhoneAttach
+      description: |
+        Verify given sms code by matching it with sended.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeVerificationBody'
+        description: "SMS code, entered by user and user's phone number"
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: "New user entity with some empty field."
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: "Given code does not match with sended"
+  /user/wechat/attach/code:
+    post:
+      tags:
+        - user
+      summary: verify user via wechat
+      operationId: verifyAttachingWechatCode
+      description: |
+        Verify user by given wechat code
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WechatCodeVerificationBody'
+        description: "Sended wechat code"
+      responses:
+        '200':
+          headers:
+            Wechat-Access-Token:
+              schema:
+                type: string
+              description: "Sended wechat access token for user"
+            Wechat-Refresh-Token:
+              schema:
+                type: string
+              description: "Sended wechat refresh token for user"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: "New user entity with some empty field."
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: "Given code does not match with sended"
+  /user/tokens/access:
+    post:
+      tags:
+        - user
+      summary: renew access token
+      operationId: renewAccessToken
+      description: |
+        Renew user's access token
+      security:
+        - BearerAuthRefresh: []
+      responses:
+        '200':
+          description: 'OK'
+          headers:
+            Access-Token:
+              schema:
+                type: string
+              description: New access token for user
+  /user/me:
+    get:
+      tags:
+        - user
+      summary: get current user entity
+      operationId: getCurrentUser
+      security:
+        - BearerAuthAccess: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: Current user entity
+  /user/avatar:
+    delete:
+      tags:
+        - user
+      summary: delete current user avatar
+      operationId: deleteAvatar
+      security:
+        - BearerAuthAccess: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: User entity
+  /user/session:
+    put:
+      tags:
+        - user
+      summary: update current session info
+      operationId: updateSession
+      description: |
+        Updating current session (defined by access token)
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionRequestBody'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+          description: Updated user entity with some empty field.
+    delete:
+      tags:
+        - user
+      summary: end another users session
+      operationId: deleteOtherUserSessions
+      description: |
+        Ending another user's session, except current (defined by token)
+      security:
+        - BearerAuthAccess: []
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Session'
+            description: Array of ended sessions
+  /user/settings:
+    put:
+      tags:
+        - user
+      summary: update user's settings
+      operationId: updateUserSettings
+      description: |
+        Updating user settings
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserSettingsRequestBody'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSettings'
+          description: Updated user entity with some empty field.
+  /user:
+    put:
+      tags:
+        - user
+      summary: update user's info
+      operationId: updateUser
+      description: |
+        Updating user entity (id defining by token)
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserMultipart'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: Updated user entity with some empty field.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Text of 'name' blocked.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied. You trying to update entity of another user.
+  /user/subscription/{targetId}:
+    post:
+      tags:
+        - user
+      summary: creating a subscription on user
+      operationId: subscribeOnUser
+      description: |
+        Creating a subscription for user on another user
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: targetId
+          schema:
+            type: integer
+          required: true
+          description: Id of user for subscribe
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/SubscriptionFiber'
+            description: Object of created subscription (includes only ids)
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: User for subscribe not found
+    delete:
+      tags:
+        - user
+      summary: unsubscribing from user
+      operationId: unsubscribeFromUser
+      description: |
+        Deleting a subscription for user on another user
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: targetId
+          schema:
+            type: integer
+          required: true
+          description: Id of user for unsubscribe
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/SubscriptionFiber'
+            description: Object of deleted subscription (includes only ids)
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Subscription not found
+  /user/block/{targetId}:
+    post:
+      tags:
+        - user
+      summary: block chat with given user
+      operationId: blockUser
+      description: |
+        Bans chat with given user
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: targetId
+          schema:
+            type: integer
+          required: true
+          description: Id of user for ban
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/UserBan'
+            description: Object of created ban entity
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: User for ban not found
+  /user/unblock/{targetId}:
+    post:
+      tags:
+        - user
+      summary: unblock chat with given user
+      operationId: unblockUser
+      description: |
+        Unban chat with given user
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: targetId
+          schema:
+            type: integer
+          required: true
+          description: Id of user for unban
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/UserBan'
+            description: Object of deleted ban entity
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: User for unban not found or user has not been banned by you
+  /user/relation/{targetId}:
+    get:
+      tags:
+        - user
+      summary: user wuxing relations
+      operationId: getRelation
+      description: |
+        get user wuxing relation with another user by id
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: targetId
+          schema:
+            type: integer
+          required: true
+          description: Id of user for unban
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/WuXingResponse'
+            description: Users relation (in Chinese)
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: User for checking relation not found
+  /user/geopoint:
+    post:
+      tags:
+        - user
+      summary: adds a new geopoint for user
+      operationId: addGeoPoint
+      description: |
+        Adds new GeoPoint fo user movements log. (Perform an updating of user.lastPoint entity field)
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+         content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewGeoPointRequestBody'
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/GeoJsonPoint'
+            description: Object of created point in GeoJson notation
+  /user/views/cached:
+    get:
+      tags:
+        - user
+      summary: getting users viewed content
+      operationId: getCachedViewedContent
+      description: |
+        Method for getting viewed cached content of current user
+      security:
+        - BearerAuthAccess: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ViewedContentIdsCached'
+          description: Object with array of viewed content ids
+  /user/device:
+    post:
+      tags:
+        - user
+      summary: create device by jpush id
+      operationId: createNotifyingDevice
+      description: |
+        Creating a notifying device
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewNotifyingDeviceRequestBody'
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/NotifyingDevice'
+            description: Created device.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Device id duplicated.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Device is not registered in the service.
+  /user/device/{targetId}:
+    delete:
+      tags:
+        - user
+      summary: delete device by jpush id
+      operationId: deleteNotifyingDevice
+      description: |
+        Deleting a notifying device
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: targetId
+          schema:
+            type: string
+          required: true
+          description: Id of push service device
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/NotifyingDevice'
+            description: Deleted device.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Device by id not found.
+  /admin/user/{id}/permissions:
+    put:
+      tags:
+        - admin
+      summary: updating of users permission
+      operationId: updateUserPermission
+      description: |
+        Method for updating User's permission. (You must have a permission for this method)
+      security:
+        - CookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PermissionListRequestBody'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionList'
+          description: Object of created point in GeoJson notation
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied. You trying to update entity of another user.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Updating user not found
+  /admin:
+    post:
+      tags:
+        - admin
+      summary: create new admin
+      operationId: createAdmin
+      description: |
+        Method for creating Admin. (You must have a permission for this method)
+      security:
+        - CookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminRequestBody'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkJSONResponse'
+          description: OK. New admin created.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Login duplicated.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied.
+  /admin/login:
+    post:
+      tags:
+        - admin
+      summary: login admin
+      operationId: loginAdmin
+      description: |
+        Method to login Admin. (You must have a permission for this method)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminLoginRequestBody'
+      responses:
+        '200':
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: auth=abcdefghijklmnopqrstuvwxyz;Path=/;HttpOnly;SameSite=Strict;Secure
+              description: JWT access token in cookie
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkJSONResponse'
+          description: OK. Login.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Login or password not correct.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied.
+  /admin/user/{id}/official:
+    put:
+      tags:
+        - admin
+      summary: updating of users permission
+      operationId: setUserOfficialFlag
+      description: |
+        Method for sets isOfficial flag for user
+      security:
+        - CookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of user
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: 'User entity with official flag'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Updating user not found
+  /admin/user/{id}/category:
+    put:
+      tags:
+        - admin
+      summary: updating of users permission
+      operationId: updateUserCategoriesPermission
+      description: |
+        Method for sets categories flags for user
+      security:
+        - CookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCategoriesRequestBody'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: 'User entity with official flag'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Updating user not found
+  /user/reward:
+    get:
+      tags:
+        - user
+      summary: get current user daily reward value for show
+      operationId: getDailyReward
+      security:
+        - BearerAuthAccess: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailyReward'
+          description: Current reward for user
+    post:
+      tags:
+        - user
+      summary: take current reward (perform a transaction)
+      operationId: takeDailyReward
+      security:
+        - BearerAuthAccess: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: Transaction of transfering reward to user
+  /user/master:
+    post:
+      tags:
+        - user
+      summary: buy master status in sector
+      operationId: buyMasterStatus
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BuySectorMasterRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterStatus'
+          description: Object of created MasterStatus entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Insufficient balance
+  /admin/user/{id}/balance:
+    put:
+      tags:
+        - admin
+      summary: updating of users permission
+      operationId: correctUserBalance
+      description: |
+        Method for updating User's balance. (You must have a permission for this method)
+      security:
+        - CookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CorrectUserBalanceRequestBody'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: Created transaction for balance correction
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied. You trying to update entity of another user.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Updating user not found
+  /admin/content/{id}/block:
+    put:
+      tags:
+        - admin
+      summary: content blocking
+      operationId: blockContent
+      description: |
+        Method for making content invisible for users
+      security:
+        - CookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of content
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Content'
+          description: Object of blocked Content
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Content not found
+  /content/photo:
+    post:
+      tags:
+        - content
+      summary: create photo content
+      operationId: createPhotoContent
+      description: |
+        Creating content with photo
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PhotoContentMultipart'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Content'
+          description: New content entity.
+  /content/video:
+    post:
+      tags:
+        - content
+      summary: create video content
+      operationId: createVideoContent
+      description: |
+        Creating content with video
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VideoContentMultipart'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Content'
+          description: New content entity.
+  /content/{id}:
+    put:
+      tags:
+        - content
+      summary: update content description
+      operationId: updateContent
+      description: |
+        Updating content description if you a creator
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentUpdateDescriptionRequestBody'
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of content
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Content'
+            description: Object of updated content entity
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied. You are not creator of content entity.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Content not found
+    delete:
+      tags:
+        - content
+      summary: delete content
+      operationId: deleteContent
+      description: |
+        Deletion of the content description if you a creator
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of content
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Content'
+            description: Object of deleted content entity
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied. You are not creator of content entity.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Content not found
+  /content/{id}/like:
+    put:
+      tags:
+        - content
+      summary: like action from user for content
+      operationId: likeContent
+      description: |
+        Creating a like entity fro content with given id from user (detected by auth)
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of content
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Like'
+            description: Object of created like
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Content not found
+  /content/{id}/view:
+    put:
+      tags:
+        - content
+      summary: view action from user for content
+      operationId: viewContent
+      description: |
+        Creating a view entity for content with given id from user (detected by auth)
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of content
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/View'
+            description: Object of created View (or exists view entity, cuz view entity is unique)
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Content not found
+  /content/{id}/view/finish:
+    put:
+      tags:
+        - content
+      summary: finish view action from user for content
+      operationId: finishViewContent
+      description: |
+        Filling of finished field of a view entity for content with given id from user (detected by auth)
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of content
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/View'
+            description: Object of view entity
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Content not found or view from current user on given content not exists
+  /content/{id}/report:
+    put:
+      tags:
+        - content
+      summary: report content
+      operationId: reportContent
+      description: |
+        Creating a report entity for content with given id from user (detected by auth)
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequestBody'
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of content
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Report'
+            description: Object of created Report (or exists report entity, cuz report entity is unique)
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Content not found
+  /content/{id}/comment:
+    put:
+      tags:
+        - content
+      summary: comment content
+      operationId: commentContent
+      description: |
+        Creating a comment entity for content with given id from user (detected by auth)
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentRequestBody'
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of content
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Comment'
+            description: Object of created comment
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Content not found
+  /content/{id}/share:
+    put:
+      tags:
+        - content
+      summary: add log of content sharing
+      operationId: addContentShareLogEntry
+      description: |
+        Add sharelog entity for content. This route should be called after share content (just for future analitics)
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of content
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ShareLog'
+            description: Object of created sharelog
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Content not found
+  /content/recommended:
+    get:
+      tags:
+        - content
+      summary: get recommended content
+      operationId: getRecommendedContent
+      description: |
+        Get sorted recommended content for user (by auth token)
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: query
+          name: skip
+          schema:
+            type: integer
+          description: Amount of new content queue to skip
+        - in: query
+          name: take
+          schema:
+            type: integer
+          description: Amount of new content queue to take
+      responses:
+        '200':
+          content:
+            application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ContentWithLike'
+          description: OK. Returns arrays with recommended content (viewed and new)
+  /comment/{id}:
+    delete:
+      tags:
+        - comment
+      summary: delete your comment
+      operationId: deleteComment
+      description: |
+        Deleting comment if you are it author
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of comment
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Comment'
+            description: Object of deleted comment entity
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied. You are not creator of given comment.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Comment not found
+  /comment/{id}/like:
+    put:
+      tags:
+        - comment
+      summary: like comment by id
+      operationId: likeComment
+      description: |
+        Creating like for comment by given comment ID
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of comment
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/CommentLike'
+            description: Object of comment like entity
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Comment not found
+    delete:
+      tags:
+        - comment
+      summary: unlike comment by id
+      operationId: unlikeComment
+      description: |
+        Deletes like for comment by given comment ID
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of comment
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/CommentLike'
+            description: Object of deleted comment like entity
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Comment not found
+  /comment/{id}/hide:
+    put:
+      tags:
+        - comment
+      summary: hide comment by id
+      operationId: hideComment
+      description: |
+        Creating entity of commentHide
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of comment
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/CommentHide'
+            description: Object of comment hide entity
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Comment not found
+    delete:
+      tags:
+        - comment
+      summary: show comment by id
+      operationId: showComment
+      description: |
+        Deletes comment hide by given comment ID
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of comment
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/CommentHide'
+            description: Object of comment hide entity
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Comment not found
+  /comment/{id}/report:
+    put:
+      tags:
+        - comment
+      summary: report comment
+      operationId: reportComment
+      description: |
+        Creating a report entity for comment with given id from user (detected by auth)
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentReportRequestBody'
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of comment
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/CommentReport'
+            description: Object of created Report (or exists report entity, cuz report entity is unique)
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Comment not found
+  /admin/comment/{id}/block:
+    put:
+      tags:
+        - admin
+      summary: comment blocking
+      operationId: blockComment
+      description: |
+        Method for making comment invisible for users
+      security:
+        - CookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of comment
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+          description: Object of blocked Comment
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Comment not found
+  /admin/content/{id}/moderate:
+    put:
+      tags:
+        - admin
+      summary: content moderation
+      operationId: moderateContent
+      description: |
+        Method for performing content moderation
+      security:
+        - CookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModerationRequest'
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of content
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Content'
+          description: Object of moderated Content
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Content not found
+  /system/log/mobile:
+    post:
+      tags:
+        - system
+      summary: external (mobile) logs endpoint
+      operationId: postMobileLog
+      description: |
+        Method for saving some logs from mobile apps
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileLogRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ElasticResponse'
+          description: Response from Elasticsearch
+  /chat:
+    post:
+      tags:
+        - chat
+      summary: chat creation
+      operationId: createChat
+      description: |
+        Method for creating chat
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewChatDTO'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chat'
+          description: Object of new chat
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Interlocutor user id not found
+    get:
+      tags:
+        - chat
+      summary: chat list getter
+      operationId: getChatList
+      description: |
+        Returns all chats of user
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: query
+          name: dateBefore
+          schema:
+            type: string
+          description: Filter by date (give all chats before date)
+        - in: query
+          name: dateAfter
+          schema:
+            type: string
+          description: Filter by date (give all chats after date)
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: how much to take
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatElement'
+          description: Chat objects
+  /chat/new:
+    get:
+      tags:
+        - chat
+      summary: method for new messages polling
+      operationId: hasNewMessage
+      description: |
+        Returns bool that indicates if user has new messages
+      security:
+        - BearerAuthAccess: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: boolean
+          description: Chat objects
+  /chat/{chatId}/messages:
+    get:
+      tags:
+        - chat
+      summary: method for getting chat messages
+      operationId: getChatMessages
+      description: |
+        Returns filtered chat messages
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: chatId
+          schema:
+            type: integer
+          required: true
+          description: ID of comment
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageResponse'
+          description: Message objects
+  /chat/message:
+    post:
+      tags:
+        - chat
+      summary: create chat message
+      operationId: sendMessage
+      description: |
+        Creating message to chat
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewChatMessageDTO'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessage'
+          description: Object of new chat message
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Chat not found
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Chat with this user blocked
+  /chat/message/netease:
+    post:
+      tags:
+        - chat
+      summary: send chat message via netease im
+      operationId: sendMessageViaNetease
+      description: |
+        Sending message to user by using NeteaseIM service
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewNeteaseMessage'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NeteaseMessageResponse'
+          description: Object with data from netease response
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: User not found
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Chat with this user blocked
+  /product:
+    post:
+      tags:
+        - product
+      summary: create product
+      operationId: createProduct
+      description: |
+        Creating product
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductMultipart'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: Object of new product
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Wrong file format error
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied. You are not creator of product entity.
+  /product/purchase:
+    post:
+      tags:
+        - product
+      summary: create purchase product
+      operationId: createProductPurchase
+      description: |
+        Creating purchase of product
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductPurchaseRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPurchase'
+          description: Object of new purchase
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Product blocked or over
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied. You can`t buy product.
+  /product/purchase/check:
+    post:
+      tags:
+        - product
+      summary: check purchase product
+      operationId: checkPurchase
+      description: |
+        Check correct purchase of product
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductPurchaseTokenRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPurchaseVerifyResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Purchase blocked or product blocked
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied. You can`t check (sell) purchase.
+  /product/purchase/confirm:
+    post:
+      tags:
+        - product
+      summary: confirm purchase product
+      operationId: confirmPurchase
+      description: |
+        Confirm purchase of product
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductPurchaseTokenRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPurchaseVerifyResponse'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Purchase blocked (was not checked) or product blocked
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied. You can`t confirm purchase.
+  /product/seller/{id}:
+    post:
+      tags:
+        - product
+      summary: create trusted seller
+      operationId: createTrustedSeller
+      description: |
+        Creating trusted seller.
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of seller
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionList'
+          description: OK
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: You can`t products
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied. You can`t set trusted sellers.
+    delete:
+      tags:
+        - product
+      summary: delete trusted seller
+      operationId: deleteTrustedSeller
+      description: |
+        Deleting trusted seller.
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of seller
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionList'
+          description: OK
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied. You can`t set trusted sellers.
+  /package:
+    get:
+      tags:
+        - package
+      summary: get recommended packages
+      operationId: getRecommendedPackages
+      description: |
+        Returning list of recommended packages with some meta-info
+      security:
+        - BearerAuthAccess: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecommendedPackageResponse'
+          description: Recommended packages
+    post:
+      tags:
+        - package
+      summary: create new package
+      operationId: createContentPackage
+      description: |
+        Method for creating content package. (You must have a permission for this method)
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentPackageCreationDTO'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentPackage'
+          description: OK. New package created.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied.
+  /package/{id}:
+    get:
+      tags:
+        - package
+      summary: get package content
+      operationId: getContentFromPackage
+      description: |
+        Returning all content from given package with some meta-info
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of package
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ContentWithLike'
+          description: New content entity.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Content package not found
+    put:
+      tags:
+        - package
+      summary: update content package
+      operationId: updateContentPackage
+      description: |
+        Updating content package by id
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentPackageRequest'
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of content package
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ContentPackage'
+            description: Object of updated content package entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Validation error.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Content package not found
+    delete:
+      tags:
+        - package
+      summary: delete content package
+      operationId: deleteContentPackage
+      description: |
+        Deletion of the content package by id
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of content package
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ContentPackage'
+            description: Object of deleted content entity
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Validation error.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Content package not found
+  /package/{id}/photo:
+    put:
+      tags:
+        - package
+      summary: create photo content
+      operationId: createPhotoContentIn Package
+      description: |
+        Creating content with photo in package
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of content package
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PhotoContentMultipart'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Content'
+          description: New content entity.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Validation error.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Content package not found
+  /package/{id}/video:
+    put:
+      tags:
+        - package
+      summary: create video content
+      operationId: createVideoContentInPackage
+      description: |
+        Creating content with video in package
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: ID of content package
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VideoContentMultipart'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Content'
+          description: New content entity.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Validation error.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Content package not found
+  /package/photo:
+    post:
+      tags:
+        - package
+      summary: create photo content with package
+      operationId: createPhotoContentWithPackage
+      description: |
+        Creating content with photo in package
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ContentCreationWithPackagePhotoDTO'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Content'
+          description: New content entity.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Validation error.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied.
+  /package/video:
+    post:
+      tags:
+        - package
+      summary: create video content with package
+      operationId: createVideoContentWithPackage
+      description: |
+        Creating content with video in package
+      security:
+        - BearerAuthAccess: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ContentCreationWithPackageVideoDTO'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Content'
+          description: New content entity.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Validation error.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Content package not found
+  /package/polygon:
+    post:
+      tags:
+        - package
+      summary: polygon`s packages
+      operationId: getPolygonPackages
+      description: |
+        Getter for polygon`s packages
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PolygonPackagesRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                    $ref: '#/components/schemas/ContentPackage'
+          description: Array of package objects.
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Validation error.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied.
+  /package/{packageId}/content/{contentId}:
+    delete:
+      tags:
+        - package
+      summary: delete content from package
+      operationId: deleteContentFromPackage
+      description: |
+        Delete content or create new package
+      security:
+        - BearerAuthAccess: []
+      parameters:
+        - in: path
+          name: packageId
+          schema:
+            type: integer
+          required: true
+          description: ID of package
+        - in: path
+          name: contentId
+          schema:
+            type: integer
+          required: true
+          description: ID of content
+      responses:
+        '200':
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Content'
+            description: Object of deleted content entity
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Access denied.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleError'
+          description: Package or content not found
+components:
+  securitySchemes:
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: auth
+    BearerAuthAccess:
+      type: http
+      scheme: bearer
+      description: Access JWT token with bearer auth
+    BearerAuthRefresh:
+      type: http
+      scheme: bearer
+      description: Refresh (UUID/v4) token with bearer auth
+  schemas:
+    RecommendedPackageResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: Entity id
+        name:
+          type: string
+          example: "package1"
+          description: Package name
+        hashtag:
+          type: string
+          example: "#hashtag"
+          description: Hashtag of package
+        ownerId:
+          type: integer
+          example: 123
+          description: Id of user, who create this package
+        mainContentId:
+          type: integer
+          example: 16200
+          description: Id of content firstly created with package
+        createdAt:
+          type: string
+          format: date-time
+          description: Creating datetime
+        updatedAt:
+          type: string
+          format: date-time
+          description: Creating datetime
+        type:
+          type: string
+          enum: ['public', 'private']
+          example: private
+        geopoint:
+          $ref: '#/components/schemas/GeoJsonPoint'
+        owner:
+          $ref: '#/components/schemas/User'
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserMeta'
+        mainContent:
+          $ref: '#/components/schemas/Content'
+        likesCount:
+          type: integer
+          example: 154
+          description: Aggregated count of likes for contents
+        contentAmount:
+          type: integer
+          example: 154
+          description: Aggregated count of content
+        commentsCount:
+          type: integer
+          example: 154
+          description: Aggregated count of comments
+        sharesCount:
+          type: integer
+          example: 154
+          description: Aggregated count of shares
+    UserMeta:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        avatar:
+          type: string
+          description: Avatar image url
+          example: 'http://somehost.dom/some/path.png'
+        name:
+          type: string
+          example: 'Steve Fox'
+        subsCount:
+          type: string
+          description: Amount of user's subscribers
+          example: 150
+    CampaignResponse:
+      type: object
+      properties:
+        id:
+          type: number
+          example: 22
+          description: campaign id
+        fileUrl:
+          type: string
+          example: 'http://someurl.domain/1111.jpg'
+          description: Content file url (photo or video)
+        viewPrice:
+          type: number
+          example: 10
+          description: Price per ad view (Even numbers only!)
+    CampaignRequest:
+      required:
+          - contentId
+          - advertisingBudget
+          - geopoint
+          - polygon
+          - viewPrice
+      type: object
+      properties:
+        contentId:
+          type: number
+          example: 1
+          description: Content Id
+        advertisingBudget:
+          type: number
+          example: 400
+          description: Advertising budget
+        viewPrice:
+          type: number
+          example: 10
+          description: Price per ad view (Even numbers only!)
+        timeStart:
+          type: string
+          example: 2020-03-18T09:58:00.700Z
+          description: Campaign Start Date
+        timeEnd:
+          type: string
+          example: 2020-03-18T09:58:00.700Z
+          description: Campaign End Date
+        geopoint:
+          type: string
+          example: 51.17934297928927, 65.0390625
+          description: point polygon master status
+        polygon:
+          $ref: '#/components/schemas/GeoJsonPolygon'
+          description: Coords of polygon
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: number
+          example: 1
+        contentId:
+          type: number
+          example: 1
+          description: Content Id
+        userId:
+          type: number
+          example: 1
+          description: User Id
+        advertisingBudget:
+          type: number
+          example: 400
+          description: Advertising budget
+        rest:
+          type: number
+          example: 400
+          description: Advertising budget
+        viewPrice:
+          type: number
+          example: 10
+          description: Price per ad view (Even numbers only!)
+        timeStart:
+          type: string
+          example: 2020-03-18T09:58:00.700Z
+          description: Campaign Start Date
+        timeEnd:
+          type: string
+          example: 2020-03-18T09:58:00.700Z
+          description: Campaign End Date
+        geopoint:
+          $ref: '#/components/schemas/GeoJsonPoint'
+          description: point polygon master status
+    MasterStatus:
+      type: object
+      properties:
+        id:
+          type: number
+          example: 12
+          description: Entity ID
+        buyerPoint:
+          $ref: '#/components/schemas/GeoJsonPoint'
+          description: FROM WHERE user buy this polygon master status
+        polygon:
+          $ref: '#/components/schemas/GeoJsonPolygon'
+          description: Coords of polygon (bought)
+        userId:
+          type: number
+          example: 1
+          description: Buyer ID
+    BuySectorMasterRequest:
+      type: object
+      properties:
+        polygon:
+          $ref: '#/components/schemas/GeoJsonPolygon'
+        point:
+          type: string
+          example: "53.35516211475919,83.769850730896"
+          description: Correct latlon string ("lattitude.coord,longitute.coord") FROM GIVEN POLYGON
+    ElasticResponse:
+      type: object
+      properties:
+        index:
+          type: string
+          description: Body saved to index with that name
+          example: mobile-2020.2.27
+        type:
+          type: string
+          example: doc
+        id:
+          type: string
+          description: id of saved document
+          example: afD6hHABdzWz08a-jsgo
+        result:
+          type: string
+          description: Record result
+          example: created
+    MobileLogRequest:
+      type: object
+      properties:
+        errorId:
+          type: string
+        message:
+          type: string
+        device:
+          type: string
+    WuXingResponse:
+      type: object
+      properties:
+        relation:
+          type: string
+          description: One of 10 possible relation
+        descriptions:
+          type: array
+          items:
+            type: string
+    ModerationRequest:
+        type: object
+        properties:
+          mediaSuggestion:
+            type: string
+            enum: ['block', 'review', 'pass']
+            example: 'block'
+          textSuggestion:
+            type: string
+            enum: ['block', 'review', 'pass']
+            example: 'review'
+          adminComment:
+            type: string
+            example: Any string
+            description: Some admin commentary
+    DailyReward:
+      type: object
+      properties:
+        reward:
+          type: integer
+          example: 1440
+          description: Reward amount (1440 max)
+        ask:
+          type: integer
+          example: 1581333736
+          description: UNIX Timestamp of checking time
+    CorrectUserBalanceRequestBody:
+      type: object
+      properties:
+        newBalance:
+          type: integer
+          example: 8500
+          description: NEW amount of user balance
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: Transaction id
+        creatorId:
+          type: integer
+          example: 1
+          description: Id of transaction creator
+        from:
+          type: integer
+          example: 4
+          description: id of sending ACCOUNT
+        to:
+          type: integer
+          example: 6
+          description: id of receiving ACCOUNT
+        amount:
+          type: integer
+          example: 150
+          description: how much transfered
+        viewId:
+          type: integer
+          example: 27
+          description: linked entity id (can be NULL)
+        likeId:
+          type: integer
+          example: 27
+          description: linked entity id (can be NULL)
+        commentId:
+          type: integer
+          example: 27
+          description: linked entity id (can be NULL)
+        shareId:
+          type: integer
+          example: 27
+          description: linked entity id (can be NULL)
+        adId:
+          type: integer
+          example: 27
+          description: linked entity id (can be NULL)
+        productId:
+          type: integer
+          example: 27
+          description: linked entity id (can be NULL)
+    NeteaseMessageResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: ['ok', 'error']
+          example: ok
+        meta:
+          type: string
+          example: 'error description from netease'
+          description: desc field from netease-im response (exists only when status equals to error)
+        msgid:
+          type: number
+          example: 393645181886
+          description: msgid field from netease success response
+        antispam:
+          type: boolean
+          description: antispam field from netease success response
+        timetag:
+          type: number
+          example: 1590661865857
+          description: timetag field from netease success response
+    MessageResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: Message id
+        number:
+          type: integer
+          example: 108
+          description: order number of message
+        text:
+          type: string
+          example: 'hello'
+          description: Message text
+        createdAt:
+          type: string
+          format: date-time
+          description: Creating datetime
+        me:
+          type: boolean
+          description: Is it your message
+    ChatElement:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: Id of chat
+        interlocutor:
+          $ref: '#/components/schemas/User'
+          description: Your interlocutor entity
+        newMessages:
+          type: integer
+          example: 25
+          description: your unread messages
+        updatedAt:
+          type: string
+          format: date-time
+          description: Creating datetime
+        message:
+          type: string
+          description: Text of last message
+    ChatMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: message id
+        from:
+          type: integer
+          example: 4
+          description: id of sender
+        chatId:
+          type: integer
+          example: 3
+          description: chat id
+        text:
+          type: string
+        number:
+          type: integer
+          example: 83
+          description: order number of message
+        createdAt:
+            type: string
+            format: date-time
+            description: Creating datetime
+    NewNeteaseMessage:
+      type: object
+      properties:
+        to:
+          type: integer
+          example: 23
+          description: Id of recipient user
+        text:
+          type: string
+          example: "Hello!"
+          description: text of message
+    NewChatMessageDTO:
+      type: object
+      properties:
+        chatId:
+          type: integer
+          example: 23
+          description: Id of chatcontentPackage
+        text:
+          type: string
+          example: "Hello!"
+          description: text of message
+    NewChatDTO:
+      type: object
+      properties:
+        interlocutor:
+          type: integer
+          example: 1
+          description: Id of user for chat
+    Chat:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: Id of chat
+        creatorId:
+          type: integer
+          example: 1
+          description: id of chat creator (first participants of dialog)
+        interlocutor:
+          type: integer
+          example: 2
+          description: id of second chat participant
+        messageCount:
+          type: integer
+          example: 99
+          description: amount of messages in chat
+    UserBan:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: Id of ban entity
+        userId:
+          type: integer
+          example: 2
+          description: Who blocks
+        bannedId:
+          type: integer
+          example: 3
+          description: Who blocked
+    ViewedContentIdsCached:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+    CommentLike:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 3
+          description: Entity id
+        commentId:
+          type: integer
+          example: 4
+          description: Comment entity id
+        userId:
+          type: integer
+          example: 5
+          description: User entity id (who press like)
+        createdAt:
+            type: string
+            format: date-time
+            description: Creating datetime
+    CommentHide:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 3
+          description: Entity id
+        commentId:
+          type: integer
+          example: 4
+          description: Comment entity id
+        userId:
+          type: integer
+          example: 5
+          description: User entity id
+        createdAt:
+            type: string
+            format: date-time
+            description: Creating datetime
+    RecommendedContentResponse:
+      type: object
+      properties:
+        newContent:
+          type: array
+          items:
+            $ref: '#/components/schemas/Content'
+          description: array with new content
+        oldContent:
+          type: array
+          items:
+            $ref: '#/components/schemas/Content'
+          description: array with new content
+    RefreshResponse:
+      type: object
+      properties:
+        recommendedNewContentLength:
+          type: integer
+          description: Size of new content queue
+        recommendedOldContentLength:
+          type: integer
+          description: Size of viewed content queue
+    ShareLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 3
+          description: Entity id
+        contentId:
+          type: integer
+          example: 4
+          description: Content entity id
+        userId:
+          type: integer
+          example: 5
+          description: User entity id (who press like)
+        createdAt:
+            type: string
+            format: date-time
+            description: Creating datetime
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 3
+          description: Entity id
+        contentId:
+          type: integer
+          example: 4
+          description: Content entity id
+        userId:
+          type: integer
+          example: 5
+          description: User entity id (who press like)
+        createdAt:
+            type: string
+            format: date-time
+            description: Creating datetime
+        text:
+          type: string
+          description: Comment text
+        isBlocked:
+          type: boolean
+          description: is comment was blocked by moderator
+    CommentRequestBody:
+      type: object
+      properties:
+        text:
+          type: string
+          example: 'This is a comment text :)'
+    ReportRequestBody:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: ['AppViolation', 'SexualContent', 'OffensiveContent', 'AntisocialContent', 'DrugsAd', 'LawViolation']
+          example: 'SexualContent'
+        comment:
+          type: string
+          example: Bad content!
+    CommentReportRequestBody:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: ['AppViolation', 'DrugsAd', 'LawViolation']
+          example: 'LawViolation'
+        text:
+          type: string
+          example: Bad comment!
+    Report:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 3
+          description: Entity id
+        contentId:
+          type: integer
+          example: 4
+          description: Content entity id
+        userId:
+          type: integer
+          example: 5
+          description: User entity id (who press like)
+        createdAt:
+            type: string
+            format: date-time
+            description: Creating datetime
+        type:
+          type: string
+          enum: ['AppViolation', 'SexualContent', 'OffensiveContent', 'AntisocialContent', 'DrugsAd', 'LawViolation']
+          example: 'SexualContent'
+        comment:
+          type: string
+          example: Bad content!
+    CommentReport:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 3
+          description: Entity id
+        commentId:
+          type: integer
+          example: 4
+          description: Comment entity id
+        userId:
+          type: integer
+          example: 5
+          description: User entity id (who report comment)
+        createdAt:
+            type: string
+            format: date-time
+            description: Creating datetime
+        type:
+          type: string
+          enum: ['AppViolation', 'DrugsAd', 'LawViolation']
+          example: 'SexualContent'
+        text:
+          type: string
+          example: Bad comment!
+    View:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 3
+          description: Entity id
+        contentId:
+          type: integer
+          example: 4
+          description: Content entity id
+        userId:
+          type: integer
+          example: 5
+          description: User entity id (who press like)
+        createdAt:
+            type: string
+            format: date-time
+            description: Creating datetime
+        finished:
+            type: string
+            format: date-time
+            description: Finish datetime (null when created)
+    CampaignView:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 3
+          description: Entity id
+        campaignId:
+          type: integer
+          example: 4
+          description: Campaign entity id
+        userId:
+          type: integer
+          example: 5
+          description: User entity id (who press like)
+        createdAt:
+            type: string
+            format: date-time
+            description: Creating datetime
+    ContentUpdateDescriptionRequestBody:
+      type: object
+      properties:
+        description:
+          type: string
+          description: Text for content
+    Like:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 3
+          description: Entity id
+        contentId:
+          type: integer
+          example: 4
+          description: Content entity id
+        userId:
+          type: integer
+          example: 5
+          description: User entity id (who press like)
+        createdAt:
+            type: string
+            format: date-time
+            description: Creating datetime
+    Content:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: Entity id
+        creatorId:
+          type: integer
+          example: 1
+          description: User (creator) id
+        fileUrl:
+          type: string
+          example: 'http://someurl.domain/1111.jpg'
+          description: Content file url (photo or video)
+        thumbnail:
+          type: string
+          example: 'http://someurl.domain/1111.jpg'
+          description: Thumbnail file url for video content (nullable)
+        description:
+          type: string
+          description: Text for content
+        likesCount:
+          type: integer
+          example: 154
+          description: Aggregated count of likes for content
+        viewsCount:
+          type: integer
+          example: 154
+          description: Aggregated count of likes for content
+        q:
+          type: number
+          format: float
+          example: 3.5
+          description: Content attractiveness ratio (likes/vies)
+        isDescriptionModerated:
+          type: boolean
+          example: true
+        isMediaModerated:
+          type: boolean
+          example: false
+        geopoint:
+          $ref: '#/components/schemas/GeoJsonPoint'
+        geotag:
+          type: string
+          example: "Westminster Abbey"
+          description: Content geotag
+        createdAt:
+            type: string
+            format: date-time
+            description: Creating datetime
+        status:
+            type: string
+            example: created
+        isProduct:
+          type: boolean
+          example: false
+        contentPackageId:
+          type: integer
+          example: 1
+          description: Content package id
+        videoDuration:
+          type: number
+          format: float
+          example: 5.28
+          description: Duration video
+    ContentWithLike:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: Entity id
+        creatorId:
+          type: integer
+          example: 1
+          description: User (creator) id
+        fileUrl:
+          type: string
+          example: 'http://someurl.domain/1111.jpg'
+          description: Content file url (photo or video)
+        thumbnail:
+          type: string
+          example: 'http://someurl.domain/1111.jpg'
+          description: Thumbnail file url for video content (nullable)
+        description:
+          type: string
+          description: Text for content
+        likesCount:
+          type: integer
+          example: 154
+          description: Aggregated count of likes for content
+        viewsCount:
+          type: integer
+          example: 154
+          description: Aggregated count of likes for content
+        q:
+          type: number
+          format: float
+          example: 3.5
+          description: Content attractiveness ratio (likes/vies)
+        geopoint:
+          $ref: '#/components/schemas/GeoJsonPoint'
+        geotag:
+          type: string
+          example: "Westminster Abbey"
+          description: Content geotag
+        liked:
+          type: boolean
+          description: Is current user (by token) got like on that content
+        createdAt:
+            type: string
+            format: date-time
+            description: Creating datetime
+    VideoContentMultipart:
+     type: object
+     properties:
+        video:
+          type: string
+          format: binary
+          description: Video for content. Multipart form-data FILE
+        thumbnail:
+          type: string
+          format: binary
+          description: Thumbnail for video content. Multipart form-data FILE
+        description:
+          type: string
+          description: Text for content
+        geopoint:
+          type: string
+          example: "53.35516211475919,83.769850730896"
+          description: Correct latlon string ("lattitude.coord,longitute.coord")
+        geotag:
+          type: string
+          example: "Westminster Abbey"
+          description: Content geotag
+    PhotoContentMultipart:
+     type: object
+     properties:
+        photo:
+          type: string
+          format: binary
+          description: Photo for content. Multipart form-data FILE
+        description:
+          type: string
+          description: Text for content
+        geopoint:
+          type: string
+          example: "53.35516211475919,83.769850730896"
+          description: Correct latlon string ("lattitude.coord,longitute.coord")
+        geotag:
+          type: string
+          example: "Westminster Abbey"
+          description: Content geotag
+    PermissionListRequestBody:
+      type: object
+      properties:
+        canViewContent:
+          type: boolean
+          description: User can view content
+        canPostContent:
+          type: boolean
+          description: User can post content
+        canLike:
+          type: boolean
+          description: User can like something
+        canComment:
+          type: boolean
+          description: User can comment something
+        canShareContent:
+          type: boolean
+          description: User can share content link
+        canReportContent:
+          type: boolean
+          description: User can report content
+        canSearchUsers:
+          type: boolean
+          description: User can search another users
+        canViewProfiles:
+          type: boolean
+          description: User can view profiles of another users
+        canSubscribe:
+          type: boolean
+          description: User can make a subscription on another user
+        canChat:
+          type: boolean
+          description: User can chat
+        canLogin:
+          type: boolean
+          description: User can login to system
+        canEditProfile:
+          type: boolean
+          description: User can edit his profile
+        canEditSettings:
+          type: boolean
+          description: User can edit his settings
+        canBuyVipStatus:
+          type: boolean
+          description: User can buy vip status
+        canTopBalance:
+          type: boolean
+          description: User can top his balance
+        canViewTransactions:
+          type: boolean
+          description: User can view his transaction log
+        canPublishProduct:
+          type: boolean
+          description: User can publish products
+        canBuyProduct:
+          type: boolean
+          description: User can buy product
+        canSellProduct:
+          type: boolean
+          description: User can sell product (trusted sellers)
+        canManageSellers:
+          type: boolean
+          description: User can add or delete trusted sellers
+        canEditPermissions:
+          type: boolean
+          description: User can edit permission of another user
+        canManageBalances:
+          type: boolean
+          description: User can manage balances of another user
+        canManageContentVisibility:
+          type: boolean
+          description: User can make some content invisible
+        canManageCommentVisibility:
+          type: boolean
+          description: User can make some comment invisible
+        canManageProductVisibility:
+          type: boolean
+          description: User can make some product invisible
+        canManageAdvertVisibility:
+          type: boolean
+          description: User can make some advert invisible
+        canManageAdmins:
+          type: boolean
+          description: User can give admin right to another users
+    PermissionList:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Id of permission list entity
+        canViewContent:
+          type: boolean
+          description: User can view content
+        canPostContent:
+          type: boolean
+          description: User can post content
+        canLike:
+          type: boolean
+          description: User can like something
+        canComment:
+          type: boolean
+          description: User can comment something
+        canShareContent:
+          type: boolean
+          description: User can share content link
+        canReportContent:
+          type: boolean
+          description: User can report content
+        canSearchUsers:
+          type: boolean
+          description: User can search another users
+        canViewProfiles:
+          type: boolean
+          description: User can view profiles of another users
+        canSubscribe:
+          type: boolean
+          description: User can make a subscription on another user
+        canChat:
+          type: boolean
+          description: User can chat
+        canLogin:
+          type: boolean
+          description: User can login to system
+        canEditProfile:
+          type: boolean
+          description: User can edit his profile
+        canEditSettings:
+          type: boolean
+          description: User can edit his settings
+        canBuyVipStatus:
+          type: boolean
+          description: User can buy vip status
+        canTopBalance:
+          type: boolean
+          description: User can top his balance
+        canViewTransactions:
+          type: boolean
+          description: User can view his transaction log
+        canPublishProduct:
+          type: boolean
+          description: User can publish products
+        canBuyProduct:
+          type: boolean
+          description: User can buy product
+        canSellProduct:
+          type: boolean
+          description: User can sell product (trusted sellers)
+        canManageSellers:
+          type: boolean
+          description: User can add or delete trusted sellers
+        canEditPermissions:
+          type: boolean
+          description: User can edit permission of another user
+        canManageBalances:
+          type: boolean
+          description: User can manage balances of another user
+        canManageContentVisibility:
+          type: boolean
+          description: User can make some content invisible
+        canManageCommentVisibility:
+          type: boolean
+          description: User can make some comment invisible
+        canManageProductVisibility:
+          type: boolean
+          description: User can make some product invisible
+        canManageAdvertVisibility:
+          type: boolean
+          description: User can make some advert invisible
+        canManageAdmins:
+          type: boolean
+          description: User can give admin right to another users
+        userId:
+          type: integer
+          description: Id of this permission list owner
+    UserSettings:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: Entity id
+        userId:
+          type: integer
+          example: 1
+          description: User (owner) id
+        chatAcceptFrom:
+          type: string
+          enum: ['all', 'follows', 'nobody']
+          example: 'm'
+    UserSettingsRequestBody:
+      type: object
+      properties:
+        chatAcceptFrom:
+          type: string
+          enum: ['all', 'follows', 'nobody']
+          example: 'all'
+        language:
+          type: string
+          enum: ['en', 'ru', 'cn']
+          example: 'en'
+    SessionRequestBody:
+      type: object
+      properties:
+        startCountry:
+          type: string
+          description: Country when session was started
+        osVersion:
+          type: string
+          description: Version of device OS
+        deviceBrand:
+          type: string
+        deviceModel:
+          type: string
+        imei:
+          type: string
+          description: For Android. Can be null.
+        language:
+          type: string
+          enum: ['en', 'ru', 'cn']
+          example: 'en'
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Id of session
+        startCountry:
+          type: string
+          description: Country when session was started
+        osVersion:
+          type: string
+          description: Version of device OS
+        deviceBrand:
+          type: string
+        deviceModel:
+          type: string
+        imei:
+          type: string
+          description: For Android. Can be null.
+        userId:
+          type: integer
+    NewGeoPointRequestBody:
+        type: object
+        required:
+          - latitude
+          - longitude
+        properties:
+          latitude:
+            type: number
+            description: Point latitude
+          longitude:
+            type: number
+            description: Point longitude
+          time:
+            type: string
+            format: date-time
+            description: Visiting datetime
+    SubscribeRequestBody:
+      type: object
+      required:
+        - userId
+      properties:
+        userId:
+          type: number
+          description: User for subscribing on
+    SubscriptionFiber:
+      type: object
+      properties:
+        id:
+          type: number
+        subscriberId:
+          type: number
+          description: Subscriber user id
+        targetId:
+          type: number
+          description: Subscription target user id
+    CodeVerificationBody:
+      type: object
+      required:
+        - phoneNumber
+        - code
+      properties:
+        phoneNumber:
+          type: string
+          pattern: '^[0-9\-\+]*$'
+          example: '+79991234455'
+        code:
+          type: number
+          example: 123456
+        deviceId:
+          type: string
+          example: 'abcdefgh'
+          description: Device id for notification service
+    WechatCodeVerificationBody:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          example: "0714UQJz1kC3nd0r9GLz15ExJz14UQJY"
+        deviceId:
+          type: string
+          example: abcdefgh
+          description: Device id for notification service
+    GeoJsonPoint:
+      type: object
+      required:
+        - type
+        - coordinates
+      properties:
+        type:
+          type: string
+          enum:
+            - 'Point'
+          example: 'Point'
+        coordinates:
+          type: array
+          items:
+              type: number
+              example: [-10.1123, 24.3456]
+          minItems: 2
+    GeoJsonPolygon:
+      type: object
+      required:
+        - type
+        - coordinates
+      properties:
+        type:
+          type: string
+          enum:
+            - 'Polygon'
+          example: 'Polygon'
+        coordinates:
+          type: array
+          items:
+              type: array
+              items:
+                type: number
+                example: [-10.1123, 24.3456]
+              minItems: 2
+    UserMultipart:
+      type: object
+      properties:
+        balance:
+          type: integer
+          description: Balance of user (can fetch only own balance)
+        avatar:
+          type: string
+          format: binary
+          description: Avatar image url. Multipart form-data FILE
+        username:
+          type: string
+          example: 'nagibator3000'
+        name:
+          type: string
+          example: 'Steve Wonder'
+        phoneNumber:
+          type: string
+          pattern: '^[0-9\-\+]*$'
+          example: '+79991234455'
+        wechatId:
+          type: integer
+        sex:
+          type: string
+          enum: ['f', 'm', 'x']
+          example: 'm'
+        birthday:
+          type: string
+          format: date
+          example: '2019-01-01'
+        country:
+          type: string
+          example: 'USA'
+          description: Registration country
+        city:
+          type: string
+          example: 'Gotham'
+        deviceLanguage:
+          type: string
+          example: 'en'
+        currentCountry:
+          type: string
+          example: 'Russia'
+        deviceInfo:
+          type: string
+          example: 'think about it'
+          description: We will work on that field in future. May be it will be a json
+        lastPoint:
+          $ref: '#/components/schemas/GeoJsonPoint'
+        imei:
+          type: string
+
+    Account:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        balance:
+          type: integer
+          example: 1000000
+        type:
+          type: string
+          example: "main"
+        userId:
+          type: integer
+          example: 1
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        avatar:
+          type: string
+          description: Avatar image url
+          example: 'http://somehost.dom/some/path.png'
+        username:
+          type: string
+          example: 'nagibator3000'
+        name:
+          type: string
+          example: 'Steve Fox'
+        phoneNumber:
+          type: string
+          pattern: '^[0-9\-\+]*$'
+          example: '+79991234455'
+        wechatId:
+          type: integer
+        sex:
+          type: string
+          enum: ['f', 'm', 'x']
+          example: 'm'
+        birthday:
+          type: string
+          format: date
+          example: '2019-01-01'
+        country:
+          type: string
+          example: 'USA'
+          description: Registration country
+        city:
+          type: string
+          example: 'Gotham'
+        deviceLanguage:
+          type: string
+          example: 'en'
+        currentCountry:
+          type: string
+          example: 'Russia'
+        deviceInfo:
+          type: string
+          example: 'think about it'
+          description: We will work on that field in future. May be it will be a json
+        lastPoint:
+          $ref: '#/components/schemas/GeoJsonPoint'
+        imei:
+          type: string
+        account:
+          type: array
+          items:
+            $ref: '#/components/schemas/Account'
+        permissionList:
+          $ref: '#/components/schemas/PermissionList'
+        settings:
+          $ref: '#/components/schemas/UserSettings'
+        isOfficial:
+          type: boolean
+          description: Flag set to true when this user if official user
+        subsCount:
+          type: integer
+          example: 150
+          description: Amount of user's subscribers
+    SimpleError:
+      type: object
+      properties:
+        name:
+          type: string
+          example: 'Error'
+          description: Error name
+        message:
+          type: string
+          example: 'Given code does not match'
+          description: Given code doesn't match
+    OkResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: 'OK'
+    PhoneBody:
+      type: object
+      required:
+        - phoneNumber
+      properties:
+        phoneNumber:
+          type: string
+          example: '+79991112233'
+    OkJSONResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: 'OK'
+    ProductPurchaseVerifyResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: 'OK'
+        productId:
+          type: number
+          example: 1
+    AdminRequestBody:
+      type: object
+      properties:
+        login:
+            type: string
+            example: 'admin'
+        password:
+            type: string
+            example: 'pass'
+        userId:
+            type: number
+            example: 1
+    AdminLoginRequestBody:
+      type: object
+      properties:
+        login:
+            type: string
+            example: 'admin'
+        password:
+            type: string
+            example: 'pass'
+    UserCategoriesRequestBody:
+      type: object
+      properties:
+        official:
+            type: boolean
+            example: true
+        ugc:
+            type: boolean
+            example: true
+        pgc:
+            type: boolean
+            example: true
+    ProductMultipart:
+     type: object
+     properties:
+        photo:
+          type: string
+          format: binary
+          description: Photo for content. Multipart form-data FILE
+        count:
+          type: string
+          description: Count products
+        blockedAt:
+          type: string
+          example: "2020-03-18T09:58:00.700Z"
+          description: Data block purchase of product
+        deletedAt:
+          type: string
+          example: "2020-03-18T09:58:00.700Z"
+          description: Data block content of product
+        price:
+          type: string
+          example: "100"
+          description: Price of product
+        description:
+          type: string
+          description: Text for content
+        geopoint:
+          type: string
+          example: "53.35516211475919,83.769850730896"
+          description: Correct latlon string ("lattitude.coord,longitute.coord")
+        geotag:
+          type: string
+          example: "Westminster Abbey"
+          description: Content geotag
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: product id
+        price:
+          type: integer
+          example: 100
+          description: price of product
+        count:
+          type: integer
+          example: 3
+          description: count of product
+        contentId:
+          type: integer
+          example: 1
+          description: id of content
+        blockedAt:
+          type: string
+          format: date-time
+          description: Datetime to blocked purchase
+        deletedAt:
+            type: string
+            format: date-time
+            description: Creating datetime
+    ProductPurchaseRequest:
+      type: object
+      properties:
+        productId:
+          type: integer
+          example: 1
+          description: product id
+    ProductPurchase:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: purchase id
+        productId:
+          type: integer
+          example: 1
+          description: id of product
+        buyerId:
+          type: integer
+          example: 1
+          description: id of user
+        status:
+          type: string
+          example: "active"
+          description: status purchase
+        qrCode:
+          type: string
+          format: binary
+          description: Datetime to blocked purchase
+    ProductPurchaseTokenRequest:
+      type: object
+      properties:
+        jwtToken:
+          type: string
+          description: jwt token of QR code
+    NewNotifyingDeviceRequestBody:
+      type: object
+      properties:
+        deviceId:
+            type: string
+            example: '171976fa8a19ba27f11'
+    NotifyingDevice:
+      type: object
+      properties:
+        id:
+            type: integer
+            example: 1
+        userId:
+            type: integer
+            example: 1
+        deviceId:
+            type: string
+            example: '171976fa8a19ba27f11'
+    ContentPackage:
+      type: object
+      properties:
+        id:
+            type: integer
+            example: 1
+        name:
+            type: string
+            example: 'album'
+        hashtag:
+            type: string
+        ownerId:
+            type: integer
+            example: 1
+        createdAt:
+            type: string
+            format: date-time
+            example: '2020-05-19T09:45:44.121Z'
+        updatedAt:
+            type: string
+            format: date-time
+            example: '2020-05-19T09:45:44.121Z'
+        type:
+            type: string
+            example: 'public'
+        geopoint:
+            type: string
+            example: '53.35516211475919,83.769850730896'
+            description: Correct latlon string ("lattitude.coord,longitute.coord")
+    ContentPackageCreationDTO:
+      type: object
+      required:
+        - 'name'
+        - 'hashtag'
+        - 'type'
+        - 'geopoint'
+      properties:
+        name:
+            type: string
+            example: 'album'
+        hashtag:
+            type: string
+        type:
+            type: string
+            example: 'public'
+        geopoint:
+            type: string
+            example: '53.35516211475919,83.769850730896'
+            description: Correct latlon string ("lattitude.coord,longitute.coord")
+    ContentPackageRequest:
+      type: object
+      properties:
+        name:
+            type: string
+            example: 'album'
+        hashtag:
+            type: string
+        type:
+            type: string
+            example: 'public'
+        geopoint:
+            type: string
+            example: '53.35516211475919,83.769850730896'
+            description: Correct latlon string ("lattitude.coord,longitute.coord")
+    ContentCreationWithPackagePhotoDTO:
+     type: object
+     required:
+        - 'namePackage'
+     properties:
+        photo:
+          type: string
+          format: binary
+          description: Photo for content. Multipart form-data FILE
+        description:
+          type: string
+          description: Text for content
+        geopointContent:
+          type: string
+          example: "53.35516211475919,83.769850730896"
+          description: Correct latlon string ("lattitude.coord,longitute.coord")
+        geotag:
+          type: string
+          example: "Westminster Abbey"
+          description: Content geotag
+        namePackage:
+            type: string
+            example: 'album'
+        hashtag:
+            type: string
+        type:
+            type: string
+            example: 'public'
+        geopointPackage:
+            type: string
+            example: '53.35516211475919,83.769850730896'
+            description: Correct latlon string ("lattitude.coord,longitute.coord")
+    ContentCreationWithPackageVideoDTO:
+     type: object
+     required:
+        - 'namePackage'
+     properties:
+        video:
+          type: string
+          format: binary
+          description: Video for content. Multipart form-data FILE
+        thumbnail:
+          type: string
+          format: binary
+          description: Thumbnail for video content. Multipart form-data FILE
+        description:
+          type: string
+          description: Text for content
+        geopointContent:
+          type: string
+          example: "53.35516211475919,83.769850730896"
+          description: Correct latlon string ("lattitude.coord,longitute.coord")
+        geotag:
+          type: string
+          example: "Westminster Abbey"
+          description: Content geotag
+        namePackage:
+            type: string
+            example: 'album'
+        hashtag:
+            type: string
+        type:
+            type: string
+            example: 'public'
+        geopointPackage:
+            type: string
+            example: '53.35516211475919,83.769850730896'
+            description: Correct latlon string ("lattitude.coord,longitute.coord")
+    PolygonPackagesRequest:
+     type: object
+     required:
+        - 'polygon'
+     properties:
+        polygon:
+          $ref: '#/components/schemas/GeoJsonPolygon'
+          description: Coords of polygon
