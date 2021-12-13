@@ -1,1 +1,1 @@
-TypeGraphQl, hasura, express boilerplate
+Обработка файла согласно актуальному рейтингу ФШР

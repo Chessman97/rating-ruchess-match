@@ -1,30 +1,25 @@
-import { Authorized, Delete, Get, JsonController, OnUndefined, Param } from 'routing-controllers';
+import { Authorized, JsonController, Post, UploadedFiles } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
+import { createMulterInstance, fileFilterForUserAvatars } from '../../lib/multer';
 
-import { UserNotFoundError } from '../errors/UserNotFoundError';
 import { User } from '../models/User';
 import { UserService } from '../services/UserService';
 import { ErrorResponse } from './responses/ErrorResponse';
 import { UserResponse } from './responses/UserResponse';
 
 @Authorized()
-@JsonController('/user')
+@JsonController('/file')
 @OpenAPI({
     security: [{ ApiKeyAuth: [] }],
-    tags: ['User'],
-    parameters: [{
-        in: 'query',
-        name: 'pageSize',
-        type: 'integer',
-    }],
+    tags: ['File'],
 })
-export class UserController {
+export class FileController {
 
     public constructor(
         private userService: UserService
     ) { }
 
-    @Get()
+    @Post()
     @OpenAPI({
         summary: 'Get all users', description: 'All users', parameters: [{
             in: 'query', name: 'pageSize', type: 'integer',
@@ -32,20 +27,14 @@ export class UserController {
     })
     @ResponseSchema(UserResponse, { description: 'Users', isArray: true })
     @ResponseSchema(ErrorResponse, { description: 'Access denied', statusCode: '401' })
-    public find(): Promise<User[]> {
+    public find(
+        @UploadedFiles(
+            'files[]',
+            { options: createMulterInstance({ files: 3 }, fileFilterForUserAvatars) }
+        ) files: Express.Multer.File[] = []
+    ): Promise<User[]> {
+        console.log(files);
         return this.userService.find(undefined, undefined);
-    }
-
-    @Get('/:id')
-    @OnUndefined(UserNotFoundError)
-    @ResponseSchema(UserResponse)
-    public one(@Param('id') id: number): Promise<User | undefined> {
-        return this.userService.findOne(id);
-    }
-
-    @Delete('/:id')
-    public delete(@Param('id') id: number): Promise<void> {
-        return this.userService.delete(id);
     }
 
 }

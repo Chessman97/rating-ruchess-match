@@ -1,19 +1,15 @@
+import { bootstrapMicroframework } from 'microframework-w3tec';
 import 'reflect-metadata';
 
-import { bootstrapMicroframework } from 'microframework-w3tec';
 
 import { banner } from './lib/banner';
 import { Logger } from './lib/logger';
-import { eventDispatchLoader } from './loaders/eventDispatchLoader';
 import { expressLoader } from './loaders/expressLoader';
-import { graphqlLoader } from './loaders/graphqlLoader';
-import { hasuraLoader } from './loaders/hasuraLoader';
+
 import { homeLoader } from './loaders/homeLoader';
 import { iocLoader } from './loaders/iocLoader';
-import { promLoader } from './loaders/promLoader';
-import { redisLoader } from './loaders/redisLoader';
+
 import { swaggerLoader } from './loaders/swaggerLoader';
-import { typeormLoader } from './loaders/typeormLoader';
 import { winstonLoader } from './loaders/winstonLoader';
 
 /**
@@ -32,17 +28,11 @@ bootstrapMicroframework({
      * bootstrap process. All loaders are executed one by one in a sequential order.
      */
     loaders: [
-        winstonLoader,
         iocLoader,
-        eventDispatchLoader,
-        typeormLoader,
+        winstonLoader,
         expressLoader,
-        redisLoader,
         swaggerLoader,
         homeLoader,
-        promLoader,
-        graphqlLoader,
-        hasuraLoader,
     ],
 })
     .then((mf) => {

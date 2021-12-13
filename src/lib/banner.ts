@@ -13,9 +13,6 @@ export function banner(log: Logger): void {
         if (env.swagger.enabled) {
             log.info(`Swagger      : ${route()}${env.swagger.route}`);
         }
-        if (env.graphql.enabled) {
-            log.info(`GraphQL      : ${route()}${env.graphql.route}`);
-        }
         log.info(`Prometheus   : ${route()}/metrics` );
         log.info('-------------------------------------------------------');
     } else {

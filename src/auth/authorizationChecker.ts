@@ -1,11 +1,10 @@
 import { Action } from 'routing-controllers';
 import { Container } from 'typedi';
-import { Connection } from 'typeorm';
 
 import { Logger } from '../lib/logger';
 import { AuthService } from './AuthService';
 
-export function authorizationChecker(connection: Connection): (action: Action, roles: any[]) => Promise<boolean> | boolean {
+export function authorizationChecker(): (action: Action, roles: any[]) => Promise<boolean> | boolean {
     const log = new Logger(__filename);
     const authService = Container.get<AuthService>(AuthService);
 
