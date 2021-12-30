@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Authorized, JsonController, Post, UploadedFiles } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { createMulterInstance, fileFilterForUserAvatars } from '../../lib/multer';
 
 import { User } from '../models/User';
-import { UserService } from '../services/UserService';
+import { FileService } from '../services/FileService';
 import { ErrorResponse } from './responses/ErrorResponse';
 import { UserResponse } from './responses/UserResponse';
 
@@ -16,15 +17,11 @@ import { UserResponse } from './responses/UserResponse';
 export class FileController {
 
     public constructor(
-        private userService: UserService
+        private fileService: FileService
     ) { }
 
     @Post()
-    @OpenAPI({
-        summary: 'Get all users', description: 'All users', parameters: [{
-            in: 'query', name: 'pageSize', type: 'integer',
-        }],
-    })
+    @OpenAPI({ summary: 'Обработка файл', description: 'All users' })
     @ResponseSchema(UserResponse, { description: 'Users', isArray: true })
     @ResponseSchema(ErrorResponse, { description: 'Access denied', statusCode: '401' })
     public find(
@@ -34,7 +31,7 @@ export class FileController {
         ) files: Express.Multer.File[] = []
     ): Promise<User[]> {
         console.log(files);
-        return this.userService.find(undefined, undefined);
+        return this.fileService.find(files);
     }
 
 }

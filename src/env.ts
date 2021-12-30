@@ -31,10 +31,6 @@ export const env = {
         apiKey: getOsEnv('APP_API_KEY'),
         corsWhitelist: getOsEnvArray('APP_CORS_WHITELIST'),
         dirs: {
-            migrations: getOsPaths('TYPEORM_MIGRATIONS'),
-            migrationsDir: getOsPath('TYPEORM_MIGRATIONS_DIR'),
-            entities: getOsPaths('TYPEORM_ENTITIES'),
-            entitiesDir: getOsPath('TYPEORM_ENTITIES_DIR'),
             controllers: getOsPaths('CONTROLLERS'),
             middlewares: getOsPaths('MIDDLEWARES'),
             interceptors: getOsPaths('INTERCEPTORS'),

@@ -3,7 +3,7 @@ import { Service } from 'typedi';
 import { Logger, LoggerInterface } from '../../decorators/Logger';
 
 @Service()
-export class UserService {
+export class FileService {
 
     public constructor(
         @Logger(__filename) private log: LoggerInterface
